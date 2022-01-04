@@ -1,0 +1,6 @@
+data/
+Datos.py
+*Utils.py
+*.txt
+__pycache__/
+pkl/

@@ -1,0 +1,1 @@
+Implementation of Baydogan's SMTS described in ``Learning a symbolic representation for multivariate time series classification``.
