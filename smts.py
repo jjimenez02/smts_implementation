@@ -86,12 +86,14 @@ class SMTS():
             n_symbols=5,
             j_ts=100,
             random_state=None,
+            oob_score=True,
             n_jobs=-1):
         self.j_ins = j_ins
         self.n_symbols = n_symbols
         self.j_ts = j_ts
         self.random_state = random_state
         self.n_jobs = n_jobs
+        self.oob_score = oob_score
 
         if self.n_symbols <= 1:
             raise Exception('n_symbols must be greater than 1')
@@ -105,7 +107,8 @@ class SMTS():
         self.__symbolic_forest = RandomForestClassifier(
             n_estimators=self.j_ts,
             random_state=self.random_state,
-            n_jobs=self.n_jobs
+            n_jobs=self.n_jobs,
+            oob_score=self.oob_score
         )
 
     def fit(self, X, y, id_col_name='id'):
@@ -118,6 +121,8 @@ class SMTS():
 
         self.__symbolic_forest.fit(self.X_train_, self.y_train_)
         self.classes_ = self.__symbolic_forest.classes_
+        self.oob_score_ = self.__symbolic_forest.oob_score_\
+            if self.oob_score else None
 
     def score(self, X, y, id_col_name='id'):
         X_test, y_test =\
