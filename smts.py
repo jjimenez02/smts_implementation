@@ -84,16 +84,14 @@ class SMTS():
             self,
             j_ins=150,
             n_symbols=5,
-            j_ts=100,
+            initial_j_ts=50,
             random_state=None,
-            oob_score=True,
             n_jobs=-1):
         self.j_ins = j_ins
         self.n_symbols = n_symbols
-        self.j_ts = j_ts
+        self.j_ts = initial_j_ts
         self.random_state = random_state
         self.n_jobs = n_jobs
-        self.oob_score = oob_score
 
         if self.n_symbols <= 1:
             raise Exception('n_symbols must be greater than 1')
@@ -104,12 +102,7 @@ class SMTS():
             random_state=self.random_state,
             n_jobs=self.n_jobs
         )
-        self.__symbolic_forest = RandomForestClassifier(
-            n_estimators=self.j_ts,
-            random_state=self.random_state,
-            n_jobs=self.n_jobs,
-            oob_score=self.oob_score
-        )
+        self.__symbolic_forest = None
 
     def fit(self, X, y, id_col_name='id'):
         self.__clean_params()
@@ -118,11 +111,7 @@ class SMTS():
 
         self.X_train_, self.y_train_ =\
             self.__into_symbolic_data(X.assign(classname=y), id_col_name)
-
-        self.__symbolic_forest.fit(self.X_train_, self.y_train_)
-        self.classes_ = self.__symbolic_forest.classes_
-        self.oob_score_ = self.__symbolic_forest.oob_score_\
-            if self.oob_score else None
+        self.__optimize_j_ts()
 
     def score(self, X, y, id_col_name='id'):
         X_test, y_test =\
@@ -137,6 +126,7 @@ class SMTS():
         return SMTS(
             j_ins=self.j_ins,
             n_symbols=self.n_symbols,
+            initial_j_ts=self.j_ts,
             random_state=self.random_state,
             n_jobs=self.n_jobs
         )
@@ -187,3 +177,35 @@ class SMTS():
                               for serie_symbolic_data in series_symbolic_data])
 
         return symbolic_data, classes
+
+    def __optimize_j_ts(self, j_ts_step_size=50, tolerance_level=0.05):
+        previous_oob_score = -np.inf
+        previous_j_ts = self.j_ts
+
+        while True:
+            self.__fit_symbolic_estimator()
+            actual_oob_score = self.__symbolic_forest.oob_score_
+
+            oob_score_diff = actual_oob_score - previous_oob_score
+            if (0 <= oob_score_diff <= tolerance_level):
+                break
+            elif (oob_score_diff < 0):
+                self.j_ts = previous_j_ts
+                self.__fit_symbolic_estimator()
+                break
+            else:
+                previous_oob_score = actual_oob_score
+                previous_j_ts = self.j_ts
+                self.j_ts += j_ts_step_size
+
+        self.classes_ = self.__symbolic_forest.classes_
+        self.oob_score_ = self.__symbolic_forest.oob_score_
+
+    def __fit_symbolic_estimator(self):
+        self.__symbolic_forest = RandomForestClassifier(
+            n_estimators=self.j_ts,
+            random_state=self.random_state,
+            n_jobs=self.n_jobs,
+            oob_score=True
+        )
+        self.__symbolic_forest.fit(self.X_train_, self.y_train_)
