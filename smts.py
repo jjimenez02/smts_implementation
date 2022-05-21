@@ -173,7 +173,7 @@ class SMTS():
         symbolic_data = pd\
             .DataFrame([serie_symbolic_data['symbolic_data']
                         for serie_symbolic_data in series_symbolic_data])
-        classes = np.asarray([serie_symbolic_data['classname']
+        classes = np.asarray([serie_symbolic_data[class_col_name]
                               for serie_symbolic_data in series_symbolic_data])
 
         return symbolic_data, classes
