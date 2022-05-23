@@ -86,12 +86,14 @@ class SMTS():
             n_symbols=5,
             initial_j_ts=50,
             random_state=None,
+            class_weight=None,
             n_jobs=-1):
         self.j_ins = j_ins
         self.n_symbols = n_symbols
         self.j_ts = initial_j_ts
         self.random_state = random_state
         self.n_jobs = n_jobs
+        self.class_weight = class_weight
 
         if self.n_symbols <= 1:
             raise Exception('n_symbols must be greater than 1')
@@ -100,7 +102,8 @@ class SMTS():
             n_estimators=self.j_ins,
             max_leaf_nodes=self.n_symbols,
             random_state=self.random_state,
-            n_jobs=self.n_jobs
+            n_jobs=self.n_jobs,
+            class_weight=class_weight
         )
         self.__symbolic_forest = None
 
@@ -127,6 +130,7 @@ class SMTS():
             j_ins=self.j_ins,
             n_symbols=self.n_symbols,
             initial_j_ts=self.j_ts,
+            class_weight=self.class_weight,
             random_state=self.random_state,
             n_jobs=self.n_jobs
         )
@@ -206,6 +210,7 @@ class SMTS():
             n_estimators=self.j_ts,
             random_state=self.random_state,
             n_jobs=self.n_jobs,
-            oob_score=True
+            oob_score=True,
+            class_weight=self.class_weight
         )
         self.__symbolic_forest.fit(self.X_train_, self.y_train_)
